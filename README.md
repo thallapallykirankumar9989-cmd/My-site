@@ -62,34 +62,89 @@
       flex-direction: column;
       align-items: center;
       width: 100%;
-      margin-top: 15px;
+      margin-top: 10px;
     }
 
-    h2 { margin-top: 0px; margin-bottom: 10px; }
+    h2 { margin-top: 0px; margin-bottom: 5px; font-size: 22px; }
     
     .top-bar {
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
       width: 95vw;
       max-width: 400px;
       margin-bottom: 10px;
+      gap: 5px;
+    }
+
+    .timer-container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .player-section {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .timer-box {
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 5px 10px;
+      border-radius: 5px;
+      font-size: 16px;
+      font-weight: bold;
+      border: 2px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .timer-active {
+      border: 2px solid #7fa650; 
+      color: #baca44;
+    }
+
+    /* --- కొత్తగా యాడ్ చేసిన గ్రేవ్ యార్డ్ డిజైన్ --- */
+    .graveyard {
+      display: flex;
+      flex-wrap: wrap;
+      min-height: 24px; /* పావులు లేకపోయినా ప్లేస్ అలానే ఉండటానికి */
+      max-width: 180px;
+      font-size: 20px;
+      text-shadow: 1px 1px 2px black;
+      color: #fff;
+    }
+    
+    .dead-piece {
+      margin-right: 2px;
+    }
+    /* ------------------------------------------- */
+
+    .controls-row {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      align-items: center;
     }
 
     #turn-indicator { 
-      font-weight: bold; font-size: 18px; color: #fff; 
+      font-weight: bold; font-size: 16px; color: #fff; 
       background-color: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 5px;
     }
 
     #restart-btn {
-      padding: 8px 15px; font-size: 14px; font-weight: bold; color: white;
+      padding: 6px 12px; font-size: 14px; font-weight: bold; color: white;
       background-color: #7fa650; border: none; border-radius: 5px; cursor: pointer;
       box-shadow: 0px 4px 6px rgba(0,0,0,0.3);
     }
 
+    #restart-btn:hover { background-color: #6a8c42; }
+
     #check-alert {
-      color: #ff4c4c; font-size: 20px; font-weight: bold; height: 25px; 
-      margin-bottom: 10px; text-shadow: 1px 1px 2px black;
+      color: #ff4c4c; font-size: 18px; font-weight: bold; height: 22px; 
+      margin-bottom: 5px; text-shadow: 1px 1px 2px black;
     }
     
     #chessboard {
@@ -149,10 +204,23 @@
 
   <div id="game-container">
       <h2>Vamshi's Pro Chess</h2>
+      
       <div class="top-bar">
-        <div id="turn-indicator">Turn: White</div>
-        <button id="restart-btn" onclick="restartGame()">Restart</button>
+        <div class="timer-container">
+          <div class="player-section">
+            <div id="white-timer" class="timer-box timer-active">♔ White: 10:00</div>
+            <div id="white-graveyard" class="graveyard"></div> </div>
+          <div class="player-section" style="align-items: flex-end;">
+            <div id="black-timer" class="timer-box">♚ Black: 10:00</div>
+            <div id="black-graveyard" class="graveyard"></div> </div>
+        </div>
+        
+        <div class="controls-row">
+          <div id="turn-indicator">Turn: White</div>
+          <button id="restart-btn" onclick="restartGame()">Restart</button>
+        </div>
       </div>
+      
       <div id="check-alert"></div> 
       <div id="chessboard">
         <div id="promotion-overlay"><div id="promotion-menu"></div></div>
@@ -162,7 +230,6 @@
   <script>
     let audioCtx = null; 
 
-    // ఆడియో ఎర్రర్స్ రాకుండా try-catch వాడాము
     function initAudio() {
       try {
         if (!audioCtx) {
@@ -191,20 +258,78 @@
 
     function playMoveSound() { playSound(600, 0.1, 'sine'); } 
     function playCaptureSound() { playSound(200, 0.2, 'triangle'); } 
+    function playGameOverSound() { playSound(150, 0.5, 'sawtooth'); } 
 
-    // --- అప్‌డేట్ చేసిన స్టార్ట్ గేమ్ ఫంక్షన్ (డిలే తీసేసాం) ---
+    let gameActive = false;
+    let whiteTime = 600; 
+    let blackTime = 600; 
+    let timerInterval = null;
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    function updateTimersUI() {
+      const wTimer = document.getElementById('white-timer');
+      const bTimer = document.getElementById('black-timer');
+      
+      wTimer.innerText = `♔ White: ${formatTime(whiteTime)}`;
+      bTimer.innerText = `♚ Black: ${formatTime(blackTime)}`;
+
+      if (currentTurn === 'white') {
+        wTimer.classList.add('timer-active');
+        bTimer.classList.remove('timer-active');
+      } else {
+        bTimer.classList.add('timer-active');
+        wTimer.classList.remove('timer-active');
+      }
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      
+      timerInterval = setInterval(() => {
+        if (!gameActive || gameOver) return;
+
+        if (currentTurn === 'white') {
+          whiteTime--;
+          if (whiteTime <= 0) handleTimeOut('Black'); 
+        } else {
+          blackTime--;
+          if (blackTime <= 0) handleTimeOut('White'); 
+        }
+        updateTimersUI();
+      }, 1000); 
+    }
+
+    function handleTimeOut(winner) {
+      gameOver = true;
+      gameActive = false;
+      clearInterval(timerInterval);
+      playGameOverSound();
+      
+      setTimeout(() => {
+        if (confirm(`⏱️ TIME OUT! 🏆 ${winner} Wins!\n\nటైమ్ అయిపోవడం వల్ల ${winner} గెలిచారు. గేమ్ రీస్టార్ట్ చేయమంటారా?`)) {
+          restartGame();
+        }
+      }, 100);
+    }
+
     function startGame() {
         const welcomeScreen = document.getElementById('welcome-screen');
         const gameContainer = document.getElementById('game-container');
         
-        // వెంటనే స్క్రీన్ మారేలా చేశాం
         welcomeScreen.style.display = 'none';
         gameContainer.style.display = 'flex';
         document.body.style.overflow = 'auto'; 
         
-        // తర్వాత ఆడియో ఆన్ చేస్తాం (దీనివల్ల బటన్ ఆగిపోదు)
         initAudio();
         playMoveSound(); 
+        
+        gameActive = true;
+        startTimer();
     }
 
     const boardElement = document.getElementById('chessboard');
@@ -212,6 +337,10 @@
     const checkAlert = document.getElementById('check-alert');
     const promoOverlay = document.getElementById('promotion-overlay');
     const promoMenu = document.getElementById('promotion-menu');
+    
+    // గ్రేవ్ యార్డ్ ఎలిమెంట్స్
+    const whiteGraveyard = document.getElementById('white-graveyard');
+    const blackGraveyard = document.getElementById('black-graveyard');
     
     let squares = []; 
     let selectedSquare = null; 
@@ -271,6 +400,17 @@
       turnIndicator.innerText = "Turn: White"; checkAlert.innerText = "";
       promoOverlay.style.display = 'none'; removeCheckHighlight();
 
+      // టైమర్స్ రీసెట్
+      whiteTime = 600;
+      blackTime = 600;
+      updateTimersUI();
+      gameActive = true;
+      startTimer();
+
+      // గ్రేవ్ యార్డ్స్ రీసెట్
+      whiteGraveyard.innerHTML = '';
+      blackGraveyard.innerHTML = '';
+
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
           squares[row][col].innerText = initialBoard[row][col];
@@ -282,14 +422,28 @@
 
     function handleSquareClick(row, col) {
       initAudio();
-      if (gameOver || promoOverlay.style.display === 'flex') return; 
+      if (gameOver || promoOverlay.style.display === 'flex' || !gameActive) return; 
 
       const clickedSquare = squares[row][col];
       const clickedPiece = clickedSquare.innerText;
 
       if ((clickedSquare.classList.contains('dot') || clickedSquare.classList.contains('capture-dot')) && selectedSquare) {
+        
         let isCapture = clickedSquare.innerText !== '';
-        if (isCapture) playCaptureSound(); else playMoveSound();
+        
+        // --- పావును చంపినప్పుడు గ్రేవ్ యార్డ్ లోకి యాడ్ చేయడం ---
+        if (isCapture) {
+            playCaptureSound();
+            const capturedPiece = `<span class="dead-piece">${clickedSquare.innerText}</span>`;
+            if (currentTurn === 'white') {
+                whiteGraveyard.innerHTML += capturedPiece; // వైట్ చంపిన పావులు వైట్ కింద పడతాయి
+            } else {
+                blackGraveyard.innerHTML += capturedPiece; // బ్లాక్ చంపినవి బ్లాక్ కింద పడతాయి
+            }
+        } else {
+            playMoveSound();
+        }
+        // --------------------------------------------------------
 
         movePiece(selectedSquare.row, selectedSquare.col, row, col);
         clearHighlights(); removeCheckHighlight(); selectedSquare = null; 
@@ -434,97 +588,4 @@
           if (squares[r][c].innerText === kingPiece) { kingRow = r; kingCol = c; break; }
         }
       }
-      if (kingRow === -1) return false; 
-
-      const attackerColor = kingColor === 'white' ? 'black' : 'white';
-
-      const knightMoves = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
-      for (let m of knightMoves) {
-        const r = kingRow + m[0], c = kingCol + m[1];
-        if (r >= 0 && r < 8 && c >= 0 && c < 8) {
-          const p = squares[r][c].innerText;
-          if (getPieceColor(p) === attackerColor && (p === '♘' || p === '♞')) return true;
-        }
-      }
-
-      const straightDirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-      if (checkLineOfSight(kingRow, kingCol, attackerColor, straightDirs, ['♖', '♜', '♕', '♛'])) return true;
-
-      const diagDirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
-      if (checkLineOfSight(kingRow, kingCol, attackerColor, diagDirs, ['♗', '♝', '♕', '♛'])) return true;
-
-      if (kingColor === 'white') {
-        if (kingRow - 1 >= 0 && kingCol - 1 >= 0 && squares[kingRow - 1][kingCol - 1].innerText === '♟') return true;
-        if (kingRow - 1 >= 0 && kingCol + 1 < 8 && squares[kingRow - 1][kingCol + 1].innerText === '♟') return true;
-      } else {
-        if (kingRow + 1 < 8 && kingCol - 1 >= 0 && squares[kingRow + 1][kingCol - 1].innerText === '♙') return true;
-        if (kingRow + 1 < 8 && kingCol + 1 < 8 && squares[kingRow + 1][kingCol + 1].innerText === '♙') return true;
-      }
-
-      return false;
-    }
-
-    function checkLineOfSight(startRow, startCol, attackerColor, directions, attackerPieces) {
-      for (let dir of directions) {
-        let r = startRow + dir[0], c = startCol + dir[1];
-        while (r >= 0 && r < 8 && c >= 0 && c < 8) {
-          const piece = squares[r][c].innerText;
-          if (piece !== '') {
-            if (getPieceColor(piece) === attackerColor && attackerPieces.includes(piece)) return true;
-            break; 
-          }
-          r += dir[0], c += dir[1];
-        }
-      }
-      return false;
-    }
-
-    function highlightKing(color) {
-      const kingPiece = color === 'white' ? '♔' : '♚';
-      for (let r = 0; r < 8; r++) {
-        for (let c = 0; c < 8; c++) {
-          if (squares[r][c].innerText === kingPiece) { squares[r][c].classList.add('in-check'); return; }
-        }
-      }
-    }
-
-    function isCheckmateOrStalemate(color) {
-        possibleMovesCount = 0; checkMode = true; 
-        for (let r = 0; r < 8; r++) {
-            for (let c = 0; c < 8; c++) {
-                const piece = squares[r][c].innerText;
-                if (getPieceColor(piece) === color) showPossibleMoves(piece, r, c);
-            }
-        }
-        checkMode = false; return possibleMovesCount === 0; 
-    }
-
-    function switchTurn() {
-        currentTurn = currentTurn === 'white' ? 'black' : 'white';
-        turnIndicator.innerText = `Turn: ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}`;
-
-        const inCheck = isCheck(currentTurn);
-
-        if (inCheck) {
-          checkAlert.style.color = "#ff4c4c"; checkAlert.innerText = "⚠️ CHECK! ⚠️";
-          highlightKing(currentTurn); 
-        } else {
-          checkAlert.innerText = "";
-        }
-
-        if (isCheckmateOrStalemate(currentTurn)) {
-            gameOver = true; let msg = "";
-            if (inCheck) {
-                let winner = currentTurn === 'white' ? 'Black' : 'White';
-                msg = `🏆 CHECKMATE! ${winner} Wins! 🏆\n\nగేమ్ మళ్ళీ మొదటి నుండి స్టార్ట్ చేయమంటారా?`;
-            } else {
-                msg = `🤝 STALEMATE! (మ్యాచ్ డ్రా అయింది)\n\nగేమ్ మళ్ళీ మొదటి నుండి స్టార్ట్ చేయమంటారా?`;
-            }
-
-            setTimeout(() => { if (confirm(msg)) restartGame(); }, 100);
-        }
-    }
-  </script>
-
-</body>
-</html>
+      if (kingRow ===
