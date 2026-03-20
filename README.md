@@ -588,4 +588,207 @@
           if (squares[r][c].innerText === kingPiece) { kingRow = r; kingCol = c; break; }
         }
       }
-      if (kingRow ===
+      if (kingRow ===if return false;
+const attackerColor = kingcolor
+==='white' ?'black' : 'white';
+const knightMoves = [[-2, -1], [-2, 1], [-1, -2], [-1, 2]， [1, -2], [1, 2]， [2, -1]，[2, 11]];
+for (let m of knightMoves)(
+const r = kingRow + m[0], C=
+kingCol +m[];
+if (r >=0 &&r<8&& C>=0
+8& C<8)(
+const p = squares[r]
+[c].innerText;
+if (getPieceColor(p) ===
+attackerColor 8& (p ==='a' Il p ==='A')) return true;
+const straightDirs = [[-1, 0], [1, 0]， [0, -1]， [0, 11]];
+if (checkLineofSight(kingRow, 
+kingCol, attackerColor, straightDirs, 
+tI, "', -g,-) return true;
+const diagDirs = [[-1, -1], [-1, 11, [1, -1], [1, 1]];
+if (checkLineofSight(kingRow, 
+kingCol, attackerColor, diagDirs, 
+['요'，'요'，'W'，'W'])) return true;if (kingColor === 'white')(if (kingRow -1>=0 8& kingCol
+- 1>=0 8& squares[kingRow - 1]
+[kingCol - 1].innerText === '2') return true;
+if (kingRow - 1>= 0 && kingCol
++ 1<8 8& squares[kingRow - 1][kingCol + 1].innerText ==='a') return true;
+5 else f
+if (kingRow + 1<8 8& kingcolconst attackerColor = kingColor
+==='white' ?'black':'white';
+const knightMoves = [[-2, -1], [-2,1], [-1, -2], [-1, 2]， [1, -2], [1, 2], [2, -1]，[2, 11];
+for (let m of knightMoves)f
+const r = kingRow + m[o], C=
+kingCol + m[1];
+if (r >=0 &&r<8&&C>=0
+8& C<8)(
+const p = squares[r]
+[c].innerText;
+if (getPieceColor(p) ===
+attackerColor 8& (p === '0' I1 p ==='M'))return true;
+const straightDirs = [[-1, 0], [1, 0]， [0, -1]，[0, 1]];
+if (checkLineofSight(kingRow, 
+kingCol, attackerColor, straightDirs, ['H', '黑'，‘W'，'W'])) return true;
+const diagDirs = [[-1, -1], [-1, 1], [1, -1]，[1, 1]];
+if (checkLineOfSight(kingRow, 
+kingCol, attackerColor, diagDirs, 
+Tw,-た,…g() return true;
+if (kingColor === 'white')(
+if (kingRow - 1>= 0 && kingCol
+- 1>=0 8& squares[kingRow - 1]
+[kingCol - 1].innerText === '2') return true;
+if (kingRow -1>= 0 8& kingCol
++ 1<8 8& squares[kingRow - 1][kingCol + 1].innerText ==='4') return true;
+1 else l
+if (kingRow + 1<8 && kingCol
+- 1>= 0 8& squares[kingRow + 1]
+[kingCol - 1].innerText ==='8') returnDevelopment Discussion
+else f
+if (kingRow + 1<88& kingCol
+- 1>=0 8& squares[kingRow + 1]
+[kingCol - 1].innerText ==='2') return true;
+if (kingRow + 1<8 && kingCol
++ 1<8 8& squares[kingRow + 1][kingCol + 1].innerText ==='8') return true;
+return false;
+function checkLineOfSight(startRow, 
+startCol, attackerColor, directions, 
+attackerPieces)f
+for (let dir of directions)f
+let r= startRow + dir[0], C=
+startCol + dir[];
+while (r >=08&r<8 && C>=
+0 &&C<8)(
+const piece = squares[r]
+[c].innerText;
+if (piece !==1')(
+if (getPiececolor(piece)
+=== attackerColor 88
+attackerPieces.includes(piece)) return true;
+break;
+r+= dir[o], c += dir[1];
+return false;
+function highlightking(color)(
+const kingpiece = color ==='white'?'曾'：'曾';
+for (let r =0;r<8;r++)i
+for (let c= 0;c<8;C++)f
+if (squares[r][c].innerText
+=== kingPiece)f squares[r]
+[c].classList.add('in-check');return;)c].innerText;
+if (piece !==')(
+if (getPieceColor(piece)
+=== attackerColor &&
+attackerPieces.includes(piece)) return true;
+break;
+A
+r
++= dir[o], c += dir[1];
+子
+人
+return false;
+function highlightKing(color)
+const kingpiece = color ===
+'white'?‘雪'：‘雪';
+for (letr=0;r<8;r++)f for (let c=0;c<8;C++)f if (squares[r][c].innerText
+=== kingPiece) f squares[r]
+[c].classList.add('in-check');
+return;1
+A
+function
+isCheckmateOrStalemate(color)f
+possibleMovesCount =0;
+checkMode =true;
+for (letr=0;r<8;r++)f
+for (let c=0;c<8;C++)
+f
+const plece =
+squares[r][c].innerText;
+if
+(getPieceColor(piece) === color)showPossibleMoves(piece, r, c);
+checkMode = false;return
+possibleMovesCount === 0;
+人
+function switchTurn() f
+currentTurn = currentTurn ===
+'white'?'black' :'white';
+turnIndicator.innerText
+“Turn:$
+fcurrentTurn.charAt(0).toUpperCase()+
+currentTurn.slice(1)8'；
+updateTimersUI()；
+const incheck =
+isCheck(currentTurn);
+if (inCheck) f
+checkAlert.style.color =
+"#ff4c4c";checkAlert.innerText="1CHECK!";
+highlightKing(currentTurn);
+ else f
+checkAlert.innerText="";
+if
+(isCheckmateOrStalemate(currentTurn))i
+gameOver = true; gameActiveif (piece !==')f
+if (getPieceColor(piece)
+=== attackerColor &&
+attackerPieces.includes(piece)) return true;
+break;
+A
+r
++=dir[o], c += dir[1];
+A
+return
+false;
+人
+function highlightKing(color)f
+const kingPiece = color ===
+'white'?''：‘雪'；
+for (let r=0;r<8;r++)f for (let c=0;c<8；C++)f if (squares[r][c].innerText
+=== kingpiece) f squares[r]
+[c].classList.add('in-check');
+return;)
+子
+function
+isCheckmateorStalemate(color)f
+possibleMovesCount = 0;
+checkMode = true;
+for (letr=0;r<8;r++)f
+for (let c= 0;c<8;C++)
+√
+const piece =
+squares[r][c].innerText;
+if
+(getPiececolor(piece) === color)showPossibleMoves(piece, r, c);
+子
+checkMode= false;return
+possibleMovesCount === 0;
+function switchTurn() f
+currentTurn = currentTurn ===
+'white'?'black':'white';
+turnIndicator.innerText
+=‘Turn:$
+fcurrentTurn.charAt(0).toUpperCase()+currentTurn.slice(1;
+updateTimersUI()；
+const inCheck =
+isCheck(currentTurn);
+if (inCheck) f
+checkAlert.style.color =
+"#ff4c4c';checkAlert.innerText ="I CHECK!
+Y
+highlightKing(currentTurn);
+else f
+checkAlert.innerText=";if(isCheckmateOrStalemate(currentTurn))f
+game0ver = true;gameActive
+= false;clearInterval(timerInterval);
+let msg = "";
+if (inCheck)f
+let winner =
+currentTurn === 'white' ?'Black':'White';
+msg ='W CHECKMATE!$
+fwinner) Wins!TInInf5 ál) aoáe8
+else f
+msg =STALEMATE!
+(ǎog5 g eavod)InIn5 áe) aĲóé8 มoc
+  &obiaJoege?" 
+setTimeout(() =>f if
+(confirm(msg)) restartGame()；上，100)；
+</script>
+</body>
+</html>
