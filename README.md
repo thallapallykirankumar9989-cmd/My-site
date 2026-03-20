@@ -13,10 +13,9 @@
       background-color: #2c2b29;
       font-family: Arial, sans-serif;
       color: white;
-      overflow: hidden; /* వెల్కమ్ స్క్రీన్ ఉన్నప్పుడు స్క్రోల్ అవ్వకుండా */
+      overflow: hidden; 
     }
     
-    /* --- వెల్కమ్ స్క్రీన్ డిజైన్ --- */
     #welcome-screen {
       position: absolute;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -25,9 +24,9 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      z-index: 20; /* అందరికంటే పైన ఉండాలి */
+      z-index: 20; 
       text-align: center;
-      transition: opacity 0.5s ease; /* నెమ్మదిగా మాయం అవ్వడానికి */
+      transition: opacity 0.5s ease; 
     }
 
     #welcome-screen h1 {
@@ -59,13 +58,11 @@
 
     #play-btn:hover {
       background-color: #6a8c42;
-      transform: scale(1.05); /* హోవర్ చేసినప్పుడు కొద్దిగా పెద్దది అవుతుంది */
+      transform: scale(1.05); 
     }
-    /* ---------------------------------- */
 
-    /* --- గేమ్ కంటైనర్ డిజైన్ --- */
     #game-container {
-      display: none; /* మొదట గేమ్ దాచిపెట్టాలి */
+      display: none; 
       flex-direction: column;
       align-items: center;
       width: 100%;
@@ -209,7 +206,7 @@
   </div>
 
   <div id="game-container">
-      <h2>Pro Chess Game</h2>
+      <h2>Vamshi's Pro Chess</h2>
       
       <div class="top-bar">
         <div id="turn-indicator">Turn: White</div>
@@ -226,54 +223,22 @@
   </div>
 
   <script>
-    // --- వెల్కమ్ స్క్రీన్ లాజిక్ ---
-    function startGame() {
-        // బటన్ క్లిక్ చేయగానే ఆడియో కంటెక్స్ట్ స్టార్ట్ అవుతుంది (మొబైల్స్ లో ఇంపార్టెంట్)
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        
-        const welcomeScreen = document.getElementById('welcome-screen');
-        const gameContainer = document.getElementById('game-container');
-        
-        // నెమ్మదిగా వెల్కమ్ బోర్డ్ మాయం చేసి, గేమ్ ఓపెన్ చేయాలి
-        welcomeScreen.style.opacity = '0';
-        setTimeout(() => {
-            welcomeScreen.style.display = 'none';
-            gameContainer.style.display = 'flex';
-            document.body.style.overflow = 'auto'; // స్క్రోల్ మళ్ళీ ఆన్ చేయి
-            playMoveSound(); // గేమ్ మొదలైనట్లు సౌండ్
-        }, 500); // 0.5 సెకన్ల డిలే
+    let audioCtx = null; // ఆడియోని ముందే స్టార్ట్ చేయకుండా ఆపాము
+
+    function initAudio() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
     }
-    // ---------------------------------
-
-    const boardElement = document.getElementById('chessboard');
-    const turnIndicator = document.getElementById('turn-indicator');
-    const checkAlert = document.getElementById('check-alert');
-    const promoOverlay = document.getElementById('promotion-overlay');
-    const promoMenu = document.getElementById('promotion-menu');
-    
-    let squares = []; 
-    let selectedSquare = null; 
-    let currentTurn = 'white'; 
-    let gameOver = false; 
-    
-    let checkMode = false; 
-    let possibleMovesCount = 0; 
-    
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    const initialBoard = [
-      ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
-      ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],
-      ['', '', '', '', '', '', '', ''],
-      ['', '', '', '', '', '', '', ''],
-      ['', '', '', '', '', '', '', ''],
-      ['', '', '', '', '', '', '', ''],
-      ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],
-      ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
-    ];
 
     function playSound(frequency, duration, type) {
-      if(audioCtx.state === 'suspended') return;
+      if(!audioCtx) return;
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
       oscillator.type = type; 
@@ -288,6 +253,47 @@
 
     function playMoveSound() { playSound(600, 0.1, 'sine'); } 
     function playCaptureSound() { playSound(200, 0.2, 'triangle'); } 
+
+    // --- వెల్కమ్ స్క్రీన్ & గేమ్ స్టార్ట్ లాజిక్ ---
+    function startGame() {
+        initAudio(); // బటన్ నొక్కాకే ఆడియో స్టార్ట్ అవుతుంది
+        
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const gameContainer = document.getElementById('game-container');
+        
+        welcomeScreen.style.opacity = '0';
+        setTimeout(() => {
+            welcomeScreen.style.display = 'none';
+            gameContainer.style.display = 'flex';
+            document.body.style.overflow = 'auto'; 
+            playMoveSound(); 
+        }, 500); 
+    }
+
+    const boardElement = document.getElementById('chessboard');
+    const turnIndicator = document.getElementById('turn-indicator');
+    const checkAlert = document.getElementById('check-alert');
+    const promoOverlay = document.getElementById('promotion-overlay');
+    const promoMenu = document.getElementById('promotion-menu');
+    
+    let squares = []; 
+    let selectedSquare = null; 
+    let currentTurn = 'white'; 
+    let gameOver = false; 
+    
+    let checkMode = false; 
+    let possibleMovesCount = 0; 
+
+    const initialBoard = [
+      ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
+      ['♟', '♟', '♟', '♟', '♟', '♟', '♟', '♟'],
+      ['', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['', '', '', '', '', '', '', ''],
+      ['♙', '♙', '♙', '♙', '♙', '♙', '♙', '♙'],
+      ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
+    ];
 
     function getPieceColor(piece) {
       if (['♙', '♖', '♘', '♗', '♕', '♔'].includes(piece)) return 'white';
@@ -324,7 +330,7 @@
     }
 
     function restartGame() {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      initAudio();
       
       gameOver = false;
       currentTurn = 'white';
@@ -345,7 +351,7 @@
     }
 
     function handleSquareClick(row, col) {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      initAudio();
       if (gameOver || promoOverlay.style.display === 'flex') return; 
 
       const clickedSquare = squares[row][col];
@@ -596,4 +602,17 @@
         currentTurn = currentTurn === 'white' ? 'black' : 'white';
         turnIndicator.innerText = `Turn: ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}`;
 
-        const inCheck = isCheck(
+        const inCheck = isCheck(currentTurn);
+
+        if (inCheck) {
+          checkAlert.style.color = "#ff4c4c";
+          checkAlert.innerText = "⚠️ CHECK! ⚠️";
+          highlightKing(currentTurn); 
+        } else {
+          checkAlert.innerText = "";
+        }
+
+        if (isCheckmateOrStalemate(currentTurn)) {
+            gameOver = true;
+            let msg = "";
+            if (inCheck
