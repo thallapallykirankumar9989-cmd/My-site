@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-  <title>Vamshi's Pro Chess</title>
+  <title>Pro Chess Game</title>
   <style>
     body {
       margin: 0;
@@ -70,7 +70,7 @@
       border: 4px solid #1e1e1e;
       border-radius: 4px;
       box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
-      position: relative; /* ప్రమోషన్ ఓవర్లే కోసం */
+      position: relative; 
     }
     
     .square {
@@ -111,9 +111,8 @@
 
     .in-check { background-color: #ff6666 !important; box-shadow: inset 0 0 10px red; }
 
-    /* పాన్ ప్రమోషన్ పాపప్ (Modal) డిజైన్ */
     #promotion-overlay {
-      display: none; /* మొదట దాచిపెట్టాలి */
+      display: none; 
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
       background-color: rgba(0, 0, 0, 0.8);
@@ -145,7 +144,7 @@
 </head>
 <body>
 
-  <h2>Vamshi's Pro Chess</h2>
+  <h2>Pro Chess Game</h2>
   
   <div class="top-bar">
     <div id="turn-indicator">Turn: White</div>
@@ -156,8 +155,7 @@
   
   <div id="chessboard">
     <div id="promotion-overlay">
-        <div id="promotion-menu">
-            </div>
+        <div id="promotion-menu"></div>
     </div>
   </div>
 
@@ -173,7 +171,9 @@
     let currentTurn = 'white'; 
     let gameOver = false; 
     
-    // సౌండ్ ఎఫెక్ట్స్ కోసం ఆడియో కంటెక్స్ట్ (కోడింగ్ ద్వారా సౌండ్ పుట్టించడానికి)
+    let checkMode = false; // చెక్ మేట్ కనుక్కోవడానికి వాడే మోడ్
+    let possibleMovesCount = 0; 
+    
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     const initialBoard = [
@@ -187,13 +187,13 @@
       ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
     ];
 
-    // --- కొత్తగా యాడ్ చేసిన సౌండ్ ఫంక్షన్స్ ---
     function playSound(frequency, duration, type) {
+      if(audioCtx.state === 'suspended') return;
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
-      oscillator.type = type; // 'sine', 'square', 'sawtooth', 'triangle'
+      oscillator.type = type; 
       oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
-      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // వాల్యూమ్ తక్కువగా
+      gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); 
       gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
       oscillator.connect(gainNode);
       gainNode.connect(audioCtx.destination);
@@ -201,9 +201,8 @@
       oscillator.stop(audioCtx.currentTime + duration);
     }
 
-    function playMoveSound() { playSound(600, 0.1, 'sine'); } // చిన్న 'టిక్' సౌండ్
-    function playCaptureSound() { playSound(200, 0.2, 'triangle'); } // కొంచెం బరువైన సౌండ్
-    // ------------------------------------------
+    function playMoveSound() { playSound(600, 0.1, 'sine'); } 
+    function playCaptureSound() { playSound(200, 0.2, 'triangle'); } 
 
     function getPieceColor(piece) {
       if (['♙', '♖', '♘', '♗', '♕', '♔'].includes(piece)) return 'white';
@@ -240,7 +239,6 @@
     }
 
     function restartGame() {
-      // ఆడియో కంటెక్స్ట్ కొన్నిసార్లు సస్పెండ్ అవుతుంది, రీస్టార్ట్ అప్పుడు రిజ్యూమ్ చేద్దాం
       if (audioCtx.state === 'suspended') audioCtx.resume();
       
       gameOver = false;
@@ -249,7 +247,8 @@
       turnIndicator.innerText = "Turn: White";
       checkAlert.innerText = "";
       checkAlert.style.color = "#ff4c4c";
-      promoOverlay.style.display = 'none'; // పాపప్ దాచేయి
+      promoOverlay.style.display = 'none'; 
+      removeCheckHighlight();
 
       for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
@@ -257,57 +256,33 @@
           squares[row][col].className = `square ${(row + col) % 2 === 0 ? 'white' : 'black'}`;
         }
       }
-      playMoveSound(); // గేమ్ స్టార్ట్ అయినట్లు సౌండ్
+      playMoveSound(); 
     }
 
     function handleSquareClick(row, col) {
-      // ఆడియో కంటెక్స్ట్ యూజర్ క్లిక్ ద్వారా యాక్టివేట్ అవ్వాలి
       if (audioCtx.state === 'suspended') audioCtx.resume();
-      
-      if (gameOver || promoOverlay.style.display === 'flex') return; // ప్రమోషన్ మెనూ ఉంటే క్లిక్ అవ్వద్దు
+      if (gameOver || promoOverlay.style.display === 'flex') return; 
 
       const clickedSquare = squares[row][col];
       const clickedPiece = clickedSquare.innerText;
 
-      // పావును కదిలించడానికి లేదా చంపడానికి క్లిక్ చేస్తే
       if ((clickedSquare.classList.contains('dot') || clickedSquare.classList.contains('capture-dot')) && selectedSquare) {
         
         let isCapture = clickedSquare.innerText !== '';
-        let isCheckmate = false;
-        let winnerName = "";
-
-        if (clickedPiece === '♚') { isCheckmate = true; winnerName = "White"; }
-        else if (clickedPiece === '♔') { isCheckmate = true; winnerName = "Black"; }
-
-        // సౌండ్ ప్లే చేయడం
         if (isCapture) playCaptureSound();
         else playMoveSound();
 
-        // పావును మూవ్ చేయడం
         movePiece(selectedSquare.row, selectedSquare.col, row, col);
         clearHighlights();
         removeCheckHighlight(); 
         selectedSquare = null; 
         
-        if (isCheckmate) {
-          gameOver = true;
-          setTimeout(() => {
-            alert(`Game Over! 🏆 ${winnerName} Wins! \n\nగేమ్ మళ్ళీ మొదటి నుండి స్టార్ట్ అవుతుంది.`);
-            restartGame(); 
-          }, 100);
-          return; 
-        }
-
-        // --- కొత్తగా యాడ్ చేసిన ప్రమోషన్ చెక్ ---
         const movedPiece = squares[row][col].innerText;
-        // తెలుపు భటుడు 0 లైన్ కి లేదా నలుపు భటుడు 7 లైన్ కి వెళ్తే
         if ((movedPiece === '♙' && row === 0) || (movedPiece === '♟' && row === 7)) {
             showPromotionMenu(row, col, getPieceColor(movedPiece));
-            return; // టర్న్ మార్చొద్దు, ప్రమోషన్ అయ్యాక మారుస్తాం
+            return; 
         }
-        // ------------------------------------
 
-        // మామూలు మూవ్ అయితే టర్న్ మార్చు
         switchTurn();
         return;
       }
@@ -328,14 +303,11 @@
       squares[fromRow][fromCol].innerText = ''; 
     }
 
-    // --- కొత్తగా యాడ్ చేసిన ప్రమోషన్ మెనూ లాజిక్ ---
     function showPromotionMenu(row, col, color) {
-        // ప్రమోషన్ పావులు (రంగును బట్టి)
         const whitePieces = ['♕', '♖', '♘', '♗'];
         const blackPieces = ['♛', '♜', '♞', '♝'];
         const pieces = color === 'white' ? whitePieces : blackPieces;
 
-        // మెనూ క్లియర్ చేసి కొత్త పావులు పెట్టడం
         promoMenu.innerHTML = '';
         pieces.forEach(p => {
             const pieceSpan = document.createElement('span');
@@ -344,55 +316,72 @@
             pieceSpan.onclick = () => selectPromotion(row, col, p);
             promoMenu.appendChild(pieceSpan);
         });
-
-        // పాపప్ చూపించు
         promoOverlay.style.display = 'flex';
     }
 
     function selectPromotion(row, col, piece) {
-        // ఎంచుకున్న పావుని బోర్డ్ మీద పెట్టు
         squares[row][col].innerText = piece;
-        // పాపప్ దాచేయి
         promoOverlay.style.display = 'none';
-        playMoveSound(); // ప్రమోషన్ అయినట్లు సౌండ్
-        // ప్రమోషన్ అయ్యాక టర్న్ మార్చు
+        playMoveSound(); 
         switchTurn();
     }
-    // ----------------------------------------------
 
-    // టర్న్ మార్చే లాజిక్ ని ఒక ఫంక్షన్ లో పెట్టాను
-    function switchTurn() {
-        currentTurn = currentTurn === 'white' ? 'black' : 'white';
-        turnIndicator.innerText = `Turn: ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}`;
+    // --- కొత్త ఫంక్షన్: ఏదైనా పావు కదిపితే రాజు సేఫ్ గా ఉంటాడా అని ముందుగానే చూడటం ---
+    function isSafeMove(fromRow, fromCol, toRow, toCol, color) {
+      const originalTargetPiece = squares[toRow][toCol].innerText;
+      const movingPiece = squares[fromRow][fromCol].innerText;
 
-        if (isCheck(currentTurn)) {
-          checkAlert.style.color = "#ff4c4c";
-          checkAlert.innerText = "⚠️ CHECK! ⚠️";
-          highlightKing(currentTurn); 
-        } else {
-          checkAlert.innerText = "";
-        }
+      // తత్కాలికంగా కదిపి చూద్దాం (Simulate Move)
+      squares[toRow][toCol].innerText = movingPiece;
+      squares[fromRow][fromCol].innerText = '';
+
+      const inCheck = isCheck(color); // రాజు సేఫ్ గా ఉన్నాడా?
+
+      // కదిపిన పావును మళ్ళీ వెనక్కి తెద్దాం (Revert Move)
+      squares[fromRow][fromCol].innerText = movingPiece;
+      squares[toRow][toCol].innerText = originalTargetPiece;
+
+      return !inCheck; // చెక్ లేకపోతే అది సేఫ్
     }
+
+    function tryAddDot(fromRow, fromCol, toRow, toCol, color) {
+      if (isSafeMove(fromRow, fromCol, toRow, toCol, color)) {
+        if (checkMode) possibleMovesCount++;
+        else squares[toRow][toCol].classList.add('dot');
+        return true;
+      }
+      return false;
+    }
+
+    function tryAddCapture(fromRow, fromCol, toRow, toCol, color) {
+      if (isSafeMove(fromRow, fromCol, toRow, toCol, color)) {
+        if (checkMode) possibleMovesCount++;
+        else squares[toRow][toCol].classList.add('capture-dot');
+        return true;
+      }
+      return false;
+    }
+    // ----------------------------------------------------------------------------------
 
     function showPossibleMoves(piece, row, col) {
       const color = getPieceColor(piece);
 
       if (piece === '♙') {
         if (row - 1 >= 0 && squares[row - 1][col].innerText === '') {
-          addDot(row - 1, col);
-          if (row === 6 && squares[row - 2][col].innerText === '') addDot(row - 2, col);
+          tryAddDot(row, col, row - 1, col, color);
+          if (row === 6 && squares[row - 2][col].innerText === '') tryAddDot(row, col, row - 2, col, color);
         }
-        if (row - 1 >= 0 && col - 1 >= 0 && getPieceColor(squares[row - 1][col - 1].innerText) === 'black') addCapture(row - 1, col - 1);
-        if (row - 1 >= 0 && col + 1 < 8 && getPieceColor(squares[row - 1][col + 1].innerText) === 'black') addCapture(row - 1, col + 1);
+        if (row - 1 >= 0 && col - 1 >= 0 && getPieceColor(squares[row - 1][col - 1].innerText) === 'black') tryAddCapture(row, col, row - 1, col - 1, color);
+        if (row - 1 >= 0 && col + 1 < 8 && getPieceColor(squares[row - 1][col + 1].innerText) === 'black') tryAddCapture(row, col, row - 1, col + 1, color);
       }
       
       if (piece === '♟') {
         if (row + 1 < 8 && squares[row + 1][col].innerText === '') {
-          addDot(row + 1, col);
-          if (row === 1 && squares[row + 2][col].innerText === '') addDot(row + 2, col);
+          tryAddDot(row, col, row + 1, col, color);
+          if (row === 1 && squares[row + 2][col].innerText === '') tryAddDot(row, col, row + 2, col, color);
         }
-        if (row + 1 < 8 && col - 1 >= 0 && getPieceColor(squares[row + 1][col - 1].innerText) === 'white') addCapture(row + 1, col - 1);
-        if (row + 1 < 8 && col + 1 < 8 && getPieceColor(squares[row + 1][col + 1].innerText) === 'white') addCapture(row + 1, col + 1);
+        if (row + 1 < 8 && col - 1 >= 0 && getPieceColor(squares[row + 1][col - 1].innerText) === 'white') tryAddCapture(row, col, row + 1, col - 1, color);
+        if (row + 1 < 8 && col + 1 < 8 && getPieceColor(squares[row + 1][col + 1].innerText) === 'white') tryAddCapture(row, col, row + 1, col + 1, color);
       }
 
       if (piece === '♘' || piece === '♞') {
@@ -401,8 +390,8 @@
           const r = row + move[0], c = col + move[1];
           if (r >= 0 && r < 8 && c >= 0 && c < 8) {
             const targetPiece = squares[r][c].innerText;
-            if (targetPiece === '') addDot(r, c);
-            else if (getPieceColor(targetPiece) !== color) addCapture(r, c);
+            if (targetPiece === '') tryAddDot(row, col, r, c, color);
+            else if (getPieceColor(targetPiece) !== color) tryAddCapture(row, col, r, c, color);
           }
         });
       }
@@ -417,8 +406,8 @@
           const r = row + move[0], c = col + move[1];
           if (r >= 0 && r < 8 && c >= 0 && c < 8) {
             const targetPiece = squares[r][c].innerText;
-            if (targetPiece === '') addDot(r, c);
-            else if (getPieceColor(targetPiece) !== color) addCapture(r, c);
+            if (targetPiece === '') tryAddDot(row, col, r, c, color);
+            else if (getPieceColor(targetPiece) !== color) tryAddCapture(row, col, r, c, color);
           }
         });
       }
@@ -429,18 +418,15 @@
         let r = startRow + dir[0], c = startCol + dir[1];
         while (r >= 0 && r < 8 && c >= 0 && c < 8) {
           const targetPiece = squares[r][c].innerText;
-          if (targetPiece === '') addDot(r, c);
+          if (targetPiece === '') tryAddDot(startRow, startCol, r, c, myColor);
           else {
-            if (getPieceColor(targetPiece) !== myColor) addCapture(r, c);
+            if (getPieceColor(targetPiece) !== myColor) tryAddCapture(startRow, startCol, r, c, myColor);
             break; 
           }
           r += dir[0], c += dir[1];
         }
       });
     }
-
-    function addDot(row, col) { squares[row][col].classList.add('dot'); }
-    function addCapture(row, col) { squares[row][col].classList.add('capture-dot'); }
 
     function isCheck(kingColor) {
       let kingRow = -1, kingCol = -1;
@@ -508,6 +494,57 @@
           }
         }
       }
+    }
+
+    // --- కొత్త ఫంక్షన్: ఎవరైనా గెలిచారా (చెక్ మేట్) అని కనుక్కోవడం ---
+    function isCheckmateOrStalemate(color) {
+        possibleMovesCount = 0;
+        checkMode = true; // ఈ మోడ్ ఆన్ చేస్తే డాట్స్ పడవు, కేవలం లెక్కపెడుతుంది
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const piece = squares[r][c].innerText;
+                if (getPieceColor(piece) === color) {
+                    showPossibleMoves(piece, r, c);
+                }
+            }
+        }
+        checkMode = false;
+        return possibleMovesCount === 0; // కదలడానికి ఛాన్స్ లేకపోతే 0 అవుతుంది
+    }
+
+    function switchTurn() {
+        currentTurn = currentTurn === 'white' ? 'black' : 'white';
+        turnIndicator.innerText = `Turn: ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}`;
+
+        const inCheck = isCheck(currentTurn);
+
+        if (inCheck) {
+          checkAlert.style.color = "#ff4c4c";
+          checkAlert.innerText = "⚠️ CHECK! ⚠️";
+          highlightKing(currentTurn); 
+        } else {
+          checkAlert.innerText = "";
+        }
+
+        // ఎవరి టర్న్ ఉందో వాళ్ళకి మూవ్ చేయడానికి దారి ఉందో లేదో చూడటం
+        if (isCheckmateOrStalemate(currentTurn)) {
+            gameOver = true;
+            let msg = "";
+            if (inCheck) {
+                let winner = currentTurn === 'white' ? 'Black' : 'White';
+                msg = `🏆 CHECKMATE! ${winner} Wins! 🏆\n\nగేమ్ మళ్ళీ మొదటి నుండి స్టార్ట్ చేయమంటారా? (OK నొక్కండి)`;
+            } else {
+                msg = `🤝 STALEMATE! (మ్యాచ్ డ్రా అయింది)\n\nగేమ్ మళ్ళీ మొదటి నుండి స్టార్ట్ చేయమంటారా? (OK నొక్కండి)`;
+            }
+
+            // పావు కదిలిన కొంచెం సేపటికి పాపప్ వచ్చేలా డిలే
+            setTimeout(() => {
+                // కన్ఫర్మ్ పాపప్ (OK లేదా Cancel ఆప్షన్స్ ఉంటాయి)
+                if (confirm(msg)) {
+                    restartGame();
+                }
+            }, 100);
+        }
     }
   </script>
 
