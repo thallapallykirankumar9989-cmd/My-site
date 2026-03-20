@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-  <title>Pro Chess Game</title>
+  <title>Vamshi's Pro Chess</title>
   <style>
     body {
       margin: 0;
@@ -13,9 +13,66 @@
       background-color: #2c2b29;
       font-family: Arial, sans-serif;
       color: white;
+      overflow: hidden; /* వెల్కమ్ స్క్రీన్ ఉన్నప్పుడు స్క్రోల్ అవ్వకుండా */
     }
     
-    h2 { margin-top: 15px; margin-bottom: 10px; }
+    /* --- వెల్కమ్ స్క్రీన్ డిజైన్ --- */
+    #welcome-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: linear-gradient(135deg, #1e1e1e, #2c2b29, #4a4a4a);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 20; /* అందరికంటే పైన ఉండాలి */
+      text-align: center;
+      transition: opacity 0.5s ease; /* నెమ్మదిగా మాయం అవ్వడానికి */
+    }
+
+    #welcome-screen h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+      color: #ebecd0;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    }
+
+    #welcome-screen p {
+      font-size: 18px;
+      color: #baca44;
+      margin-bottom: 40px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    }
+
+    #play-btn {
+      padding: 15px 40px;
+      font-size: 20px;
+      font-weight: bold;
+      color: white;
+      background-color: #7fa650;
+      border: 2px solid #fff;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0px 5px 15px rgba(0,0,0,0.5);
+      transition: 0.3s;
+    }
+
+    #play-btn:hover {
+      background-color: #6a8c42;
+      transform: scale(1.05); /* హోవర్ చేసినప్పుడు కొద్దిగా పెద్దది అవుతుంది */
+    }
+    /* ---------------------------------- */
+
+    /* --- గేమ్ కంటైనర్ డిజైన్ --- */
+    #game-container {
+      display: none; /* మొదట గేమ్ దాచిపెట్టాలి */
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    h2 { margin-top: 0px; margin-bottom: 10px; }
     
     .top-bar {
       display: flex;
@@ -144,22 +201,50 @@
 </head>
 <body>
 
-  <h2>Pro Chess Game</h2>
-  
-  <div class="top-bar">
-    <div id="turn-indicator">Turn: White</div>
-    <button id="restart-btn" onclick="restartGame()">Restart</button>
+  <div id="welcome-screen">
+    <div style="font-size: 80px; text-shadow: 2px 4px 6px rgba(0,0,0,0.6);">♞</div>
+    <h1>Vamshi's Pro Chess</h1>
+    <p>Let's Play a Grand Game!</p>
+    <button id="play-btn" onclick="startGame()">Play Game</button>
   </div>
-  
-  <div id="check-alert"></div> 
-  
-  <div id="chessboard">
-    <div id="promotion-overlay">
-        <div id="promotion-menu"></div>
-    </div>
+
+  <div id="game-container">
+      <h2>Pro Chess Game</h2>
+      
+      <div class="top-bar">
+        <div id="turn-indicator">Turn: White</div>
+        <button id="restart-btn" onclick="restartGame()">Restart</button>
+      </div>
+      
+      <div id="check-alert"></div> 
+      
+      <div id="chessboard">
+        <div id="promotion-overlay">
+            <div id="promotion-menu"></div>
+        </div>
+      </div>
   </div>
 
   <script>
+    // --- వెల్కమ్ స్క్రీన్ లాజిక్ ---
+    function startGame() {
+        // బటన్ క్లిక్ చేయగానే ఆడియో కంటెక్స్ట్ స్టార్ట్ అవుతుంది (మొబైల్స్ లో ఇంపార్టెంట్)
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const gameContainer = document.getElementById('game-container');
+        
+        // నెమ్మదిగా వెల్కమ్ బోర్డ్ మాయం చేసి, గేమ్ ఓపెన్ చేయాలి
+        welcomeScreen.style.opacity = '0';
+        setTimeout(() => {
+            welcomeScreen.style.display = 'none';
+            gameContainer.style.display = 'flex';
+            document.body.style.overflow = 'auto'; // స్క్రోల్ మళ్ళీ ఆన్ చేయి
+            playMoveSound(); // గేమ్ మొదలైనట్లు సౌండ్
+        }, 500); // 0.5 సెకన్ల డిలే
+    }
+    // ---------------------------------
+
     const boardElement = document.getElementById('chessboard');
     const turnIndicator = document.getElementById('turn-indicator');
     const checkAlert = document.getElementById('check-alert');
@@ -171,7 +256,7 @@
     let currentTurn = 'white'; 
     let gameOver = false; 
     
-    let checkMode = false; // చెక్ మేట్ కనుక్కోవడానికి వాడే మోడ్
+    let checkMode = false; 
     let possibleMovesCount = 0; 
     
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -326,22 +411,19 @@
         switchTurn();
     }
 
-    // --- కొత్త ఫంక్షన్: ఏదైనా పావు కదిపితే రాజు సేఫ్ గా ఉంటాడా అని ముందుగానే చూడటం ---
     function isSafeMove(fromRow, fromCol, toRow, toCol, color) {
       const originalTargetPiece = squares[toRow][toCol].innerText;
       const movingPiece = squares[fromRow][fromCol].innerText;
 
-      // తత్కాలికంగా కదిపి చూద్దాం (Simulate Move)
       squares[toRow][toCol].innerText = movingPiece;
       squares[fromRow][fromCol].innerText = '';
 
-      const inCheck = isCheck(color); // రాజు సేఫ్ గా ఉన్నాడా?
+      const inCheck = isCheck(color); 
 
-      // కదిపిన పావును మళ్ళీ వెనక్కి తెద్దాం (Revert Move)
       squares[fromRow][fromCol].innerText = movingPiece;
       squares[toRow][toCol].innerText = originalTargetPiece;
 
-      return !inCheck; // చెక్ లేకపోతే అది సేఫ్
+      return !inCheck; 
     }
 
     function tryAddDot(fromRow, fromCol, toRow, toCol, color) {
@@ -361,7 +443,6 @@
       }
       return false;
     }
-    // ----------------------------------------------------------------------------------
 
     function showPossibleMoves(piece, row, col) {
       const color = getPieceColor(piece);
@@ -496,10 +577,9 @@
       }
     }
 
-    // --- కొత్త ఫంక్షన్: ఎవరైనా గెలిచారా (చెక్ మేట్) అని కనుక్కోవడం ---
     function isCheckmateOrStalemate(color) {
         possibleMovesCount = 0;
-        checkMode = true; // ఈ మోడ్ ఆన్ చేస్తే డాట్స్ పడవు, కేవలం లెక్కపెడుతుంది
+        checkMode = true; 
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 const piece = squares[r][c].innerText;
@@ -509,44 +589,11 @@
             }
         }
         checkMode = false;
-        return possibleMovesCount === 0; // కదలడానికి ఛాన్స్ లేకపోతే 0 అవుతుంది
+        return possibleMovesCount === 0; 
     }
 
     function switchTurn() {
         currentTurn = currentTurn === 'white' ? 'black' : 'white';
         turnIndicator.innerText = `Turn: ${currentTurn.charAt(0).toUpperCase() + currentTurn.slice(1)}`;
 
-        const inCheck = isCheck(currentTurn);
-
-        if (inCheck) {
-          checkAlert.style.color = "#ff4c4c";
-          checkAlert.innerText = "⚠️ CHECK! ⚠️";
-          highlightKing(currentTurn); 
-        } else {
-          checkAlert.innerText = "";
-        }
-
-        // ఎవరి టర్న్ ఉందో వాళ్ళకి మూవ్ చేయడానికి దారి ఉందో లేదో చూడటం
-        if (isCheckmateOrStalemate(currentTurn)) {
-            gameOver = true;
-            let msg = "";
-            if (inCheck) {
-                let winner = currentTurn === 'white' ? 'Black' : 'White';
-                msg = `🏆 CHECKMATE! ${winner} Wins! 🏆\n\nగేమ్ మళ్ళీ మొదటి నుండి స్టార్ట్ చేయమంటారా? (OK నొక్కండి)`;
-            } else {
-                msg = `🤝 STALEMATE! (మ్యాచ్ డ్రా అయింది)\n\nగేమ్ మళ్ళీ మొదటి నుండి స్టార్ట్ చేయమంటారా? (OK నొక్కండి)`;
-            }
-
-            // పావు కదిలిన కొంచెం సేపటికి పాపప్ వచ్చేలా డిలే
-            setTimeout(() => {
-                // కన్ఫర్మ్ పాపప్ (OK లేదా Cancel ఆప్షన్స్ ఉంటాయి)
-                if (confirm(msg)) {
-                    restartGame();
-                }
-            }, 100);
-        }
-    }
-  </script>
-
-</body>
-</html>
+        const inCheck = isCheck(
