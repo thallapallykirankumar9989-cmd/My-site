@@ -10,14 +10,13 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      background-color: #2c2b29; /* బ్యాక్ గ్రౌండ్ కలర్ డార్క్ చేశాను */
+      background-color: #2c2b29;
       font-family: Arial, sans-serif;
       color: white;
     }
     
     h2 { margin-top: 15px; margin-bottom: 10px; }
     
-    /* టర్న్ మరియు రీస్టార్ట్ బటన్ డిజైన్ */
     .top-bar {
       display: flex;
       justify-content: space-between;
@@ -70,7 +69,7 @@
       max-height: 400px;
       border: 4px solid #1e1e1e;
       border-radius: 4px;
-      box-shadow: 0px 10px 20px rgba(0,0,0,0.5); /* బోర్డ్‌కి 3D షాడో */
+      box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
     }
     
     .square {
@@ -80,7 +79,6 @@
       font-size: 8vw;
       cursor: pointer;
       position: relative;
-      /* కాయిన్స్ కి 3D ఎఫెక్ట్ */
       text-shadow: 2px 3px 4px rgba(0, 0, 0, 0.6); 
     }
 
@@ -88,11 +86,8 @@
       .square { font-size: 35px; }
     }
 
-    /* ప్రొఫెషనల్ బోర్డ్ రంగులు */
     .white { background-color: #ebecd0; color: #000; }
     .black { background-color: #739552; color: #000; }
-    
-    /* సెలెక్ట్ చేసిన గడి రంగు */
     .selected { background-color: #f6f669 !important; } 
 
     .dot::after {
@@ -154,7 +149,6 @@
       return null;
     }
 
-    // బోర్డ్ క్రియేట్ చేయడం
     for (let row = 0; row < 8; row++) {
       squares[row] = [];
       for (let col = 0; col < 8; col++) {
@@ -183,7 +177,6 @@
       }
     }
 
-    // కొత్తగా యాడ్ చేసిన రీస్టార్ట్ గేమ్ లాజిక్
     function restartGame() {
       gameOver = false;
       currentTurn = 'white';
@@ -208,14 +201,15 @@
 
       if ((clickedSquare.classList.contains('dot') || clickedSquare.classList.contains('capture-dot')) && selectedSquare) {
         
+        let isCheckmate = false;
+        let winnerName = "";
+
         if (clickedPiece === '♚') {
-          checkAlert.style.color = "#7fa650";
-          checkAlert.innerText = "🏆 CHECKMATE! White Wins!";
-          gameOver = true;
+          isCheckmate = true;
+          winnerName = "White";
         } else if (clickedPiece === '♔') {
-          checkAlert.style.color = "#7fa650";
-          checkAlert.innerText = "🏆 CHECKMATE! Black Wins!";
-          gameOver = true;
+          isCheckmate = true;
+          winnerName = "Black";
         }
 
         movePiece(selectedSquare.row, selectedSquare.col, row, col);
@@ -223,8 +217,12 @@
         removeCheckHighlight(); 
         selectedSquare = null; 
         
-        if (gameOver) {
-          turnIndicator.innerText = "Game Over!";
+        if (isCheckmate) {
+          // రాజు చనిపోయిన ఇమేజ్ స్క్రీన్ మీద కనిపించాక అలర్ట్ రావడానికి 100 మిల్లీసెకన్ల డిలే ఇస్తున్నాం
+          setTimeout(() => {
+            alert(`🏆 CHECKMATE! ${winnerName} Wins! 🏆\n\nప్లేయర్ 'OK' నొక్కగానే గేమ్ రీస్టార్ట్ అవుతుంది.`);
+            restartGame(); // అలర్ట్ క్లోజ్ అవ్వగానే ఆటోమేటిక్ గా గేమ్ రీస్టార్ట్ అవుతుంది
+          }, 100);
           return; 
         }
 
